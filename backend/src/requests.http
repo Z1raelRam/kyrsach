@@ -1,0 +1,19 @@
+### Логин Админа
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@hostel.com",
+  "password": "admin123"
+}
+
+###
+
+### Запрос списка пользователей (Доступно только Админу)
+GET http://localhost:8080/api/v1/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBob3N0ZWwuY29tIiwiaWF0IjoxNzcyMzExNjg2LCJleHAiOjE3NzIzMTUyODZ9.uvvGJbZ9lLU4h5TKLzxWhXAoueXxw6YPLfq_RYktd_o
+
+###
+
+### Запрос без токена (Должен выдать ошибку 403/401)
+GET http://localhost:8080/api/v1/users
