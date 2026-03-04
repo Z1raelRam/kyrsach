@@ -2,23 +2,26 @@ import { create } from 'zustand';
 
 interface AuthState {
     token: string | null;
+    role: string | null; // НОВОЕ ПОЛЕ
     isAuthenticated: boolean;
-    login: (token: string) => void;
+    login: (token: string, role: string) => void; // Обновили сигнатуру
     logout: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-    // При загрузке приложения пытаемся достать токен из кэша браузера
     token: localStorage.getItem('jwt_token'),
+    role: localStorage.getItem('user_role'), // Читаем роль из памяти
     isAuthenticated: !!localStorage.getItem('jwt_token'),
 
-    login: (token: string) => {
+    login: (token: string, role: string) => {
         localStorage.setItem('jwt_token', token);
-        set({ token, isAuthenticated: true });
+        localStorage.setItem('user_role', role); // Сохраняем роль
+        set({ token, role, isAuthenticated: true });
     },
 
     logout: () => {
         localStorage.removeItem('jwt_token');
-        set({ token: null, isAuthenticated: false });
+        localStorage.removeItem('user_role');
+        set({ token: null, role: null, isAuthenticated: false });
     },
 }));
