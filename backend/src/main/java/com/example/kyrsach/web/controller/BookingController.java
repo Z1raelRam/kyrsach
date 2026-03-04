@@ -2,14 +2,15 @@ package com.example.kyrsach.web.controller;
 
 import com.example.kyrsach.domain.User;
 import com.example.kyrsach.service.BookingService;
+import com.example.kyrsach.web.dto.BookingDetailsResponse;
 import com.example.kyrsach.web.dto.BookingRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/bookings")
@@ -20,7 +21,26 @@ public class BookingController {
 
     @PostMapping
     public ResponseEntity<?> createBooking(@RequestBody BookingRequest request, @AuthenticationPrincipal User user) {
-        // @AuthenticationPrincipal User user - Spring Security автоматически достает текущего юзера из JWT токена
-        return ResponseEntity.ok(bookingService.createBooking(request, user));
+        try {
+            return ResponseEntity.ok(bookingService.createBooking(request, user));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/my-bookings")
+    public ResponseEntity<List<BookingDetailsResponse>> getMyBookings(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(bookingService.getBookingsForUser(user.getId()));
+    }
+
+    // НОВЫЙ МЕТОД
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelBooking(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        try {
+            bookingService.cancelBooking(id, user);
+            return ResponseEntity.ok(Map.of("message", "Бронирование успешно отменено"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 }

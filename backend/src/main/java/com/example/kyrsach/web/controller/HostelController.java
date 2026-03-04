@@ -3,6 +3,7 @@ package com.example.kyrsach.web.controller;
 import com.example.kyrsach.domain.Hostel;
 import com.example.kyrsach.exception.ResourceNotFoundException;
 import com.example.kyrsach.repository.HostelRepository;
+import com.example.kyrsach.web.dto.BedResponse;
 import com.example.kyrsach.web.dto.HostelDetailsResponse;
 import com.example.kyrsach.web.dto.HostelResponse;
 import com.example.kyrsach.web.dto.RoomResponse;
@@ -21,7 +22,6 @@ public class HostelController {
 
     private final HostelRepository hostelRepository;
 
-    // Требование: пагинация через Pageable (Spring)
     @GetMapping
     public ResponseEntity<Page<HostelResponse>> getAllHostels(Pageable pageable) {
         Page<HostelResponse> hostels = hostelRepository.findAll(pageable)
@@ -29,21 +29,25 @@ public class HostelController {
         return ResponseEntity.ok(hostels);
     }
 
-    // Требование: использование кастомного поиска через JdbcTemplate
     @GetMapping("/search")
     public ResponseEntity<List<HostelResponse>> searchHostels(@RequestParam String keyword) {
         return ResponseEntity.ok(hostelRepository.searchHostelsCustom(keyword));
     }
 
-    // НОВЫЙ МЕТОД
+    // ПОЛНОСТЬЮ ОБНОВЛЕННЫЙ МЕТОД
     @GetMapping("/{id}")
     public ResponseEntity<HostelDetailsResponse> getHostelById(@PathVariable Long id) {
         Hostel hostel = hostelRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Хостел с ID " + id + " не найден"));
 
-        // Используем Stream API для конвертации сущностей комнат в DTO
+        // Собираем DTO для комнат, а внутри них - DTO для койко-мест
         List<RoomResponse> roomResponses = hostel.getRooms().stream()
-                .map(room -> new RoomResponse(room.getId(), room.getRoomNumber(), room.getType(), room.getCapacity()))
+                .map(room -> {
+                    List<BedResponse> bedResponses = room.getBeds().stream()
+                            .map(bed -> new BedResponse(bed.getId(), bed.getBedNumber()))
+                            .toList();
+                    return new RoomResponse(room.getId(), room.getRoomNumber(), room.getType(), room.getCapacity(), bedResponses);
+                })
                 .toList();
 
         HostelDetailsResponse response = new HostelDetailsResponse(
