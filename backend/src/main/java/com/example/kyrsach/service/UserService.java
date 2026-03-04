@@ -1,7 +1,9 @@
 package com.example.kyrsach.service;
 
+import com.example.kyrsach.domain.Role;
 import com.example.kyrsach.domain.User;
 import com.example.kyrsach.exception.ResourceNotFoundException;
+import com.example.kyrsach.repository.RoleRepository;
 import com.example.kyrsach.repository.UserRepository;
 import com.example.kyrsach.web.dto.UserResponse;
 import org.springframework.context.annotation.Lazy;
@@ -19,56 +21,55 @@ import java.util.stream.Collectors;
 public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // Написали конструктор вручную вместо @RequiredArgsConstructor, чтобы добавить @Lazy
-    // @Lazy спасает нас от ошибки циклической зависимости (Circular Dependency)
-    public UserService(UserRepository userRepository, @Lazy PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, RoleRepository roleRepository, @Lazy PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+    }
+
+    // НОВЫЙ МЕТОД: Регистрация гостя
+    @Transactional
+    public void registerGuest(String email, String password, String firstName, String lastName) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new IllegalArgumentException("Пользователь с таким email уже существует");
+        }
+
+        Role guestRole = roleRepository.findByName("ROLE_GUEST")
+                .orElseThrow(() -> new RuntimeException("Базовая роль не найдена в системе"));
+
+        User newUser = User.builder()
+                .email(email)
+                .password(passwordEncoder.encode(password))
+                .firstName(firstName)
+                .lastName(lastName)
+                .role(guestRole)
+                .build();
+
+        userRepository.save(newUser);
     }
 
     @Transactional(readOnly = true)
     public UserResponse getUserById(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Пользователь с ID " + id + " не найден"));
-
+        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
         return mapToResponse(user);
     }
 
     @Transactional(readOnly = true)
     public List<UserResponse> getAllUsers() {
-        List<User> users = userRepository.findAll();
-
-        return users.stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        return userRepository.findAll().stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
-    // --- НОВЫЙ МЕТОД ДЛЯ SPRING SECURITY ---
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден с email: " + email));
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + email));
     }
 
-    // --- НОВЫЙ МЕТОД ДЛЯ РЕГИСТРАЦИИ ---
-    @Transactional
-    public User createUser(User user) {
-        // Перед сохранением в БД обязательно шифруем пароль
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
-    }
-
-    // Вспомогательный метод маппинга Entity -> Record (DTO)
     private UserResponse mapToResponse(User user) {
-        return new UserResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getRole().getName()
-        );
+        return new UserResponse(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName(), user.getRole().getName());
     }
 }

@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/axios';
 import { useAuthStore } from '../store/authStore';
 
 export default function Login() {
     const [email, setEmail] = useState('admin@hostel.com');
-    const [password, setPassword] = useState('admin123');
+    const[password, setPassword] = useState('admin123');
     const [error, setError] = useState('');
     const login = useAuthStore((state) => state.login);
     const navigate = useNavigate();
@@ -14,10 +14,7 @@ export default function Login() {
         e.preventDefault();
         try {
             const response = await api.post('/auth/login', { email, password });
-            // ИЗМЕНЕНИЕ: передаем и токен, и роль!
             login(response.data.token, response.data.role);
-
-            // Если это админ - кидаем его в админку, иначе на главную
             if (response.data.role === 'ROLE_ADMIN') {
                 navigate('/admin');
             } else {
@@ -37,28 +34,23 @@ export default function Login() {
                 <form onSubmit={handleLogin}>
                     <div className="mb-4">
                         <label className="block text-gray-700 text-sm font-bold mb-2">Email</label>
-                        <input
-                            type="email"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
+                        <input type="email" required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               value={email} onChange={(e) => setEmail(e.target.value)} />
                     </div>
                     <div className="mb-6">
                         <label className="block text-gray-700 text-sm font-bold mb-2">Пароль</label>
-                        <input
-                            type="password"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
+                        <input type="password" required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               value={password} onChange={(e) => setPassword(e.target.value)} />
                     </div>
                     <button type="submit" className="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition">
                         Войти
                     </button>
                 </form>
+
+                {/* НОВЫЙ БЛОК СО ССЫЛКОЙ */}
+                <div className="mt-4 text-center text-sm text-gray-600">
+                    Нет аккаунта? <Link to="/register" className="text-blue-600 hover:underline">Зарегистрироваться</Link>
+                </div>
             </div>
         </div>
     );
