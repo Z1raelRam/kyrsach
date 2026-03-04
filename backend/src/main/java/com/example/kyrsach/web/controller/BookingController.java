@@ -1,5 +1,5 @@
 package com.example.kyrsach.web.controller;
-
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.example.kyrsach.domain.User;
 import com.example.kyrsach.service.BookingService;
 import com.example.kyrsach.web.dto.BookingDetailsResponse;
@@ -36,6 +36,12 @@ public class BookingController {
     @GetMapping("/beds/{bedId}/booked-dates")
     public ResponseEntity<List<BookedDatesResponse>> getBookedDates(@PathVariable Long bedId) {
         return ResponseEntity.ok(bookingService.getBookedDatesForBed(bedId));
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<BookingDetailsResponse>> getAllBookings() {
+        return ResponseEntity.ok(bookingService.getAllBookingsForAdmin());
     }
 
     // НОВЫЙ МЕТОД

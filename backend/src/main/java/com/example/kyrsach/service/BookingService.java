@@ -51,6 +51,19 @@ public class BookingService {
     }
 
     @Transactional(readOnly = true)
+    public List<BookingDetailsResponse> getAllBookingsForAdmin() {
+        return bookingRepository.findAllWithDetails().stream().map(booking -> new BookingDetailsResponse(
+                booking.getId(),
+                booking.getCheckInDate(),
+                booking.getCheckOutDate(),
+                booking.getStatus(),
+                booking.getBed().getRoom().getHostel().getName(),
+                booking.getBed().getRoom().getRoomNumber(),
+                booking.getBed().getBedNumber()
+        )).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public List<BookingDetailsResponse> getBookingsForUser(Long userId) {
         List<Booking> bookings = bookingRepository.findAllByUserId(userId);
         return bookings.stream().map(booking -> new BookingDetailsResponse(

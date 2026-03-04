@@ -12,11 +12,7 @@ interface BookingDetails {
     bedNumber: string;
 }
 
-// Новый интерфейс для занятых дат
-interface BookedRange {
-    from: Date;
-    to: Date;
-}
+interface BookedRange { from: Date; to: Date; }
 
 interface BookingState {
     isModalOpen: boolean;
@@ -24,13 +20,15 @@ interface BookingState {
     checkInDate: Date | undefined;
     checkOutDate: Date | undefined;
     bookings: BookingDetails[];
-    bookedDates: BookedRange[]; // Состояние для занятых дат
+    adminBookings: BookingDetails[]; // НОВОЕ ПОЛЕ ДЛЯ АДМИНА
+    bookedDates: BookedRange[];
     openModal: (bedId: number) => void;
     closeModal: () => void;
     setDates: (dates: { checkIn: Date | undefined, checkOut: Date | undefined }) => void;
     createBooking: () => Promise<boolean>;
     fetchMyBookings: () => Promise<void>;
-    cancelBooking: (id: number) => Promise<void>;
+    fetchAllBookings: () => Promise<void>; // НОВАЯ ФУНКЦИЯ ДЛЯ АДМИНА
+    cancelBooking: (id: number, isAdmin?: boolean) => Promise<void>; // Обновили сигнатуру
 }
 
 export const useBookingStore = create<BookingState>((set, get) => ({
@@ -39,21 +37,16 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     checkInDate: undefined,
     checkOutDate: undefined,
     bookings: [],
+    adminBookings: [], // Инициализация
     bookedDates:[],
 
-    // Обновленный openModal - теперь он грузит занятые даты
     openModal: async (bedId) => {
         set({ isModalOpen: true, selectedBedId: bedId, checkInDate: undefined, checkOutDate: undefined, bookedDates:[] });
         try {
             const response = await api.get(`/bookings/beds/${bedId}/booked-dates`);
-            const dates = response.data.map((r: any) => ({
-                from: new Date(r.from),
-                to: new Date(r.to)
-            }));
+            const dates = response.data.map((r: any) => ({ from: new Date(r.from), to: new Date(r.to) }));
             set({ bookedDates: dates });
-        } catch (error) {
-            console.error("Не удалось загрузить занятые даты", error);
-        }
+        } catch (error) { console.error("Ошибка загрузки дат", error); }
     },
 
     closeModal: () => set({ isModalOpen: false, selectedBedId: null }),
@@ -61,20 +54,15 @@ export const useBookingStore = create<BookingState>((set, get) => ({
 
     createBooking: async () => {
         const { selectedBedId, checkInDate, checkOutDate } = get();
-        if (!selectedBedId || !checkInDate || !checkOutDate) {
-            toast.error("Пожалуйста, выберите койко-место и корректные даты.");
-            return false;
-        }
-
+        if (!selectedBedId || !checkInDate || !checkOutDate) return false;
         try {
             await api.post('/bookings', { bedId: selectedBedId, checkInDate, checkOutDate });
-            toast.success('Место успешно забронировано!');
+            toast.success('Место забронировано!');
             set({ isModalOpen: false, selectedBedId: null, checkInDate: undefined, checkOutDate: undefined });
             get().fetchMyBookings();
             return true;
         } catch (error: any) {
-            const errorMsg = error.response?.data?.error || 'Не удалось забронировать место.';
-            toast.error(errorMsg);
+            toast.error(error.response?.data?.error || 'Ошибка');
             return false;
         }
     },
@@ -83,19 +71,29 @@ export const useBookingStore = create<BookingState>((set, get) => ({
         try {
             const response = await api.get('/bookings/my-bookings');
             set({ bookings: response.data });
-        } catch (error) {
-            console.error("Ошибка при загрузке моих бронирований:", error);
-        }
+        } catch (error) { console.error("Ошибка", error); }
     },
 
-    cancelBooking: async (id: number) => {
+    // НОВАЯ ФУНКЦИЯ ДЛЯ АДМИНА
+    fetchAllBookings: async () => {
         try {
-            await api.patch(`/bookings/${id}/cancel`); // Теперь PATCH разрешен в CORS!
+            const response = await api.get('/bookings/all');
+            set({ adminBookings: response.data });
+        } catch (error) { console.error("Ошибка", error); }
+    },
+
+    // Обновленная функция отмены (может обновлять разные списки)
+    cancelBooking: async (id: number, isAdmin = false) => {
+        try {
+            await api.patch(`/bookings/${id}/cancel`);
             toast.success('Бронирование отменено');
-            get().fetchMyBookings();
+            if (isAdmin) {
+                get().fetchAllBookings(); // Обновляем админскую таблицу
+            } else {
+                get().fetchMyBookings(); // Обновляем личный кабинет гостя
+            }
         } catch (error: any) {
-            const errorMsg = error.response?.data?.error || 'Не удалось отменить бронирование.';
-            toast.error(errorMsg);
+            toast.error(error.response?.data?.error || 'Ошибка');
         }
     }
 }));
