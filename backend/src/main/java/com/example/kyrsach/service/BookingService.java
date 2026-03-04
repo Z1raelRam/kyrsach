@@ -11,7 +11,7 @@ import com.example.kyrsach.web.dto.BookingRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.example.kyrsach.web.dto.BookedDatesResponse;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -62,6 +62,13 @@ public class BookingService {
                 booking.getBed().getRoom().getRoomNumber(),
                 booking.getBed().getBedNumber()
         )).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookedDatesResponse> getBookedDatesForBed(Long bedId) {
+        return bookingRepository.findActiveBookingsByBedId(bedId).stream()
+                .map(b -> new BookedDatesResponse(b.getCheckInDate(), b.getCheckOutDate()))
+                .collect(Collectors.toList());
     }
 
     // НОВЫЙ МЕТОД: Отмена бронирования

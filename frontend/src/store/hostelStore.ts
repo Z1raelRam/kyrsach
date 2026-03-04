@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { api } from '../api/axios';
 
-// Базовый интерфейс хостела
 interface Hostel {
     id: number;
     name: string;
@@ -9,30 +8,35 @@ interface Hostel {
     description: string;
 }
 
-// НОВЫЕ ИНТЕРФЕЙСЫ для детальной страницы
-interface Room {
+interface Bed { id: number; bedNumber: string; }
+interface Room { id: number; roomNumber: string; type: string; capacity: number; beds: Bed[]; }
+
+// НОВЫЙ ИНТЕРФЕЙС
+export interface CommonArea {
     id: number;
-    roomNumber: string;
-    type: string;
+    name: string;
     capacity: number;
 }
+
 interface HostelDetails extends Hostel {
     rooms: Room[];
 }
 
-// Обновленный интерфейс всего хранилища
 interface HostelStore {
     hostels: Hostel[];
     loading: boolean;
     selectedHostel: HostelDetails | null;
+    commonAreas: CommonArea[]; // НОВОЕ ПОЛЕ
     fetchHostels: () => Promise<void>;
     fetchHostelById: (id: string) => Promise<void>;
+    fetchCommonAreas: (hostelId: string) => Promise<void>; // НОВАЯ ФУНКЦИЯ
 }
 
 export const useHostelStore = create<HostelStore>((set) => ({
-    hostels: [],
+    hostels:[],
     loading: false,
-    selectedHostel: null, // Новое состояние
+    selectedHostel: null,
+    commonAreas:[],
 
     fetchHostels: async () => {
         set({ loading: true });
@@ -45,9 +49,8 @@ export const useHostelStore = create<HostelStore>((set) => ({
         }
     },
 
-    // Новая функция
     fetchHostelById: async (id: string) => {
-        set({ loading: true, selectedHostel: null }); // Сбрасываем старые данные перед загрузкой
+        set({ loading: true, selectedHostel: null, commonAreas:[] });
         try {
             const response = await api.get(`/hostels/${id}`);
             set({ selectedHostel: response.data, loading: false });
@@ -56,4 +59,13 @@ export const useHostelStore = create<HostelStore>((set) => ({
             set({ loading: false });
         }
     },
+
+    fetchCommonAreas: async (hostelId: string) => {
+        try {
+            const response = await api.get(`/hostels/${hostelId}/common-areas`);
+            set({ commonAreas: response.data });
+        } catch (error) {
+            console.error("Ошибка при загрузке общих зон:", error);
+        }
+    }
 }));

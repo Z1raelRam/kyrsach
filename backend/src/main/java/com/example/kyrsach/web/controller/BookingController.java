@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
+import com.example.kyrsach.web.dto.BookedDatesResponse;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +31,11 @@ public class BookingController {
     @GetMapping("/my-bookings")
     public ResponseEntity<List<BookingDetailsResponse>> getMyBookings(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(bookingService.getBookingsForUser(user.getId()));
+    }
+
+    @GetMapping("/beds/{bedId}/booked-dates")
+    public ResponseEntity<List<BookedDatesResponse>> getBookedDates(@PathVariable Long bedId) {
+        return ResponseEntity.ok(bookingService.getBookedDatesForBed(bedId));
     }
 
     // НОВЫЙ МЕТОД
