@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.cache.annotation.Cacheable; // <--- ДОБАВЛЕН ИМПОРТ
 
 import java.util.List;
 
@@ -25,6 +26,7 @@ public class HostelController {
     private final HostelRepository hostelRepository;
 
     @GetMapping
+    @Cacheable("hostels") // <--- ДОБАВЛЕНА ЭТА АННОТАЦИЯ (будет кэшировать список хостелов)
     public ResponseEntity<Page<HostelResponse>> getAllHostels(Pageable pageable) {
         Page<HostelResponse> hostels = hostelRepository.findAll(pageable)
                 .map(h -> new HostelResponse(h.getId(), h.getName(), h.getAddress(), h.getDescription()));
@@ -56,7 +58,6 @@ public class HostelController {
         return ResponseEntity.ok(response);
     }
 
-    // НОВЫЙ МЕТОД ДЛЯ АДМИНА: Создание хостела
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<HostelResponse> createHostel(@RequestBody HostelCreateRequest request) {
