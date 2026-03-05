@@ -28,7 +28,7 @@ public class Room {
     private int capacity;
 
     // НОВОЕ ПОЛЕ: Связь "один ко многим" с койко-местами
-    // EAGER нужен, чтобы места загружались сразу вместе с комнатой для отображения на фронте
+    @Builder.Default
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Bed> beds = new ArrayList<>();
 }

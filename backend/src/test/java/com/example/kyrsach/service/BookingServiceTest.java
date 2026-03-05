@@ -69,9 +69,7 @@ class BookingServiceTest {
         when(bedRepository.findById(10L)).thenReturn(Optional.of(mockBed));
 
         // 2 & 3. Выполнение и проверка
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            bookingService.createBooking(request, mockUser);
-        });
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> bookingService.createBooking(request, mockUser));
 
         assertEquals("Дата выезда должна быть позже даты заезда", exception.getMessage());
         verify(bookingRepository, never()).save(any()); // Убеждаемся, что в БД ничего не сохранилось
@@ -85,9 +83,7 @@ class BookingServiceTest {
         when(bookingRepository.existsConflictingBooking(10L, request.checkInDate(), request.checkOutDate())).thenReturn(true);
 
         // 2 & 3. Выполнение и проверка
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            bookingService.createBooking(request, mockUser);
-        });
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> bookingService.createBooking(request, mockUser));
 
         assertTrue(exception.getMessage().contains("уже забронировано"));
         verify(bookingRepository, never()).save(any());

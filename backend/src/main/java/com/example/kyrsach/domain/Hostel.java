@@ -23,7 +23,7 @@ public class Hostel {
 
     private String description;
 
-    // НОВОЕ ПОЛЕ: Связь "один ко многим" с комнатами
+    @Builder.Default
     @OneToMany(mappedBy = "hostel", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Room> rooms = new ArrayList<>();
 }

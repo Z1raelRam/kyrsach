@@ -40,8 +40,16 @@ public class SecurityConfig {
                 }))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Открываем доступ к эндпоинтам логина, регистрации и OAuth2
-                        .requestMatchers("/api/v1/auth/**", "/error", "/oauth2/**", "/login/oauth2/**").permitAll()
+                        // Открываем доступ к авторизации, OAuth2 и страницам Swagger
+                        .requestMatchers(
+                                "/api/v1/auth/**",
+                                "/error",
+                                "/oauth2/**",
+                                "/login/oauth2/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 // ДОБАВЛЯЕМ OAUTH2 LOGIN
