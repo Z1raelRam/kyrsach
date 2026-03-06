@@ -51,6 +51,24 @@ public class UserService implements UserDetailsService {
         userRepository.save(newUser);
     }
 
+    // НОВЫЙ МЕТОД ДЛЯ ОБНОВЛЕНИЯ ПРОФИЛЯ
+    @Transactional
+    public UserResponse updateProfile(Long userId, String firstName, String lastName, String password) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+
+        // Обновляем пароль только если пользователь ввел новый
+        if (password != null && !password.trim().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(password));
+        }
+
+        User updatedUser = userRepository.save(user);
+        return mapToResponse(updatedUser);
+    }
+
     @Transactional(readOnly = true)
     public UserResponse getUserById(Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));

@@ -4,8 +4,10 @@ import { api } from '../api/axios';
 import { useAuthStore } from '../store/authStore';
 
 export default function Login() {
-    const [email, setEmail] = useState('admin@hostel.com');
-    const [password, setPassword] = useState('admin123');
+    // ИЗМЕНЕНИЕ: Убираем предзаполненные значения
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+
     const [error, setError] = useState('');
     const login = useAuthStore((state) => state.login);
     const navigate = useNavigate();
@@ -64,7 +66,6 @@ export default function Login() {
                     </button>
                 </form>
 
-                {/* КНОПКА OAUTH2 GITHUB */}
                 <div className="relative flex items-center justify-center mb-4">
                     <span className="absolute inset-x-0 h-px bg-gray-300"></span>
                     <span className="relative bg-white px-4 text-sm text-gray-500">или</span>
