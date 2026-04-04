@@ -12,14 +12,24 @@ import java.util.List;
 @Repository
 public interface AreaReservationRepository extends JpaRepository<AreaReservation, Long> {
 
-    // Получить бронирования конкретного пользователя
-    @Query("SELECT r FROM AreaReservation r JOIN FETCH r.commonArea a JOIN FETCH a.hostel WHERE r.user.id = :userId")
+    // Получить бронирования конкретного пользователя (отсортированные по дате)
+    @Query("SELECT r FROM AreaReservation r JOIN FETCH r.commonArea a JOIN FETCH a.hostel WHERE r.user.id = :userId ORDER BY r.startTime DESC")
     List<AreaReservation> findAllByUserId(@Param("userId") Long userId);
 
-    // Проверяем, сколько броней пересекается с выбранным временем
-    @Query("SELECT COUNT(r) FROM AreaReservation r WHERE r.commonArea.id = :areaId " +
+    @Query("SELECT SUM(r.participants) FROM AreaReservation r WHERE r.commonArea.id = :areaId AND r.status = 'CONFIRMED' " +
+            "AND (r.startTime < :endTime AND r.endTime > :startTime)")
+    Integer sumOverlappingParticipants(@Param("areaId") Long areaId,
+                                       @Param("startTime") LocalDateTime startTime,
+                                       @Param("endTime") LocalDateTime endTime);
+
+    // Подсчет активных (CONFIRMED) бронирований для проверки вместимости
+    @Query("SELECT COUNT(r) FROM AreaReservation r WHERE r.commonArea.id = :areaId AND r.status = 'CONFIRMED' " +
             "AND (r.startTime < :endTime AND r.endTime > :startTime)")
     int countOverlappingReservations(@Param("areaId") Long areaId,
                                      @Param("startTime") LocalDateTime startTime,
                                      @Param("endTime") LocalDateTime endTime);
+
+    // Получение будущих занятых слотов (игнорируя отмененные)
+    @Query("SELECT r FROM AreaReservation r WHERE r.commonArea.id = :areaId AND r.status = 'CONFIRMED' AND r.endTime > CURRENT_TIMESTAMP ORDER BY r.startTime ASC")
+    List<AreaReservation> findFutureReservationsByAreaId(@Param("areaId") Long areaId);
 }

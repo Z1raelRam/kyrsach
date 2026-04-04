@@ -3,6 +3,7 @@ package com.example.kyrsach.web.controller;
 import com.example.kyrsach.domain.Hostel;
 import com.example.kyrsach.exception.ResourceNotFoundException;
 import com.example.kyrsach.repository.HostelRepository;
+import com.example.kyrsach.service.HostelService; // <-- ДОБАВЛЕН ИМПОРТ НОВОГО СЕРВИСА
 import com.example.kyrsach.web.dto.BedResponse;
 import com.example.kyrsach.web.dto.HostelCreateRequest;
 import com.example.kyrsach.web.dto.HostelDetailsResponse;
@@ -14,7 +15,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.cache.annotation.Cacheable; // <--- ДОБАВЛЕН ИМПОРТ
 
 import java.util.List;
 
@@ -24,13 +24,13 @@ import java.util.List;
 public class HostelController {
 
     private final HostelRepository hostelRepository;
+    private final HostelService hostelService; // <-- ИНЖЕКТИРУЕМ НОВЫЙ СЕРВИС
 
     @GetMapping
-    @Cacheable("hostels") // <--- ДОБАВЛЕНА ЭТА АННОТАЦИЯ (будет кэшировать список хостелов)
+    // @Cacheable("hostels") // <-- УБРАЛИ ОТСЮДА!
     public ResponseEntity<Page<HostelResponse>> getAllHostels(Pageable pageable) {
-        Page<HostelResponse> hostels = hostelRepository.findAll(pageable)
-                .map(h -> new HostelResponse(h.getId(), h.getName(), h.getAddress(), h.getDescription()));
-        return ResponseEntity.ok(hostels);
+        // ТЕПЕРЬ ВЫЗЫВАЕМ СЕРВИС, КОТОРЫЙ УЖЕ КЭШИРУЕТ!
+        return ResponseEntity.ok(hostelService.getAllHostels(pageable));
     }
 
     @GetMapping("/search")

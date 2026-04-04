@@ -29,6 +29,14 @@ public class BookingService {
         Bed bed = bedRepository.findById(request.bedId())
                 .orElseThrow(() -> new ResourceNotFoundException("Койко-место с ID " + request.bedId() + " не найдено"));
 
+        // ПРОВЕРКА: Если гость уже имеет активную бронь в другом хостеле
+        boolean hasActiveBooking = bookingRepository.findAllByUserId(user.getId()).stream()
+                .anyMatch(b -> b.getStatus().equals("CONFIRMED") &&
+                        !b.getBed().getRoom().getHostel().getId().equals(bed.getRoom().getHostel().getId()) &&
+                        b.getCheckOutDate().isAfter(LocalDate.now()));
+
+        if (hasActiveBooking) throw new IllegalArgumentException("Вы уже проживаете в другом хостеле!");
+
         // ПРОВЕРКА ДОСТУПНОСТИ:
         if (request.checkInDate().isAfter(request.checkOutDate()) || request.checkInDate().isEqual(request.checkOutDate())) {
             throw new IllegalArgumentException("Дата выезда должна быть позже даты заезда");
@@ -62,6 +70,8 @@ public class BookingService {
                 booking.getBed().getBedNumber()
         )).collect(Collectors.toList());
     }
+
+
 
     @Transactional(readOnly = true)
     public List<BookingDetailsResponse> getBookingsForUser(Long userId) {

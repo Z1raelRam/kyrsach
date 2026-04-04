@@ -1,49 +1,64 @@
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { DayPicker } from 'react-day-picker';
+import { ru } from 'date-fns/locale'; // Импорт русской локали
 import 'react-day-picker/dist/style.css';
 import { useBookingStore } from '../store/bookingStore';
 
 export default function BookingModal() {
     const { isModalOpen, closeModal, checkInDate, checkOutDate, setDates, createBooking, bookedDates } = useBookingStore();
 
-    // Массив правил для отключения дат в календаре
-    const disabledDays =[
-        { before: new Date() }, // Блокируем все прошедшие дни
-        ...bookedDates          // Блокируем все уже занятые диапазоны
-    ];
+    // Сегодняшняя дата для блокировки прошлого
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const handleSelect = (range: any) => {
+        if (range?.from) {
+            // Устанавливаем время на полдень, чтобы избежать сдвига часовых поясов
+            const from = new Date(range.from);
+            from.setHours(12, 0, 0, 0);
+
+            let to = range.to ? new Date(range.to) : undefined;
+            if (to) to.setHours(12, 0, 0, 0);
+
+            setDates({ checkIn: from, checkOut: to });
+        } else {
+            setDates({ checkIn: undefined, checkOut: undefined });
+        }
+    };
 
     return (
         <Transition appear show={isModalOpen} as={Fragment}>
-            <Dialog as="div" className="relative z-10" onClose={closeModal}>
-                <div className="fixed inset-0 bg-black bg-opacity-25" />
-                <div className="fixed inset-0 overflow-y-auto">
-                    <div className="flex min-h-full items-center justify-center p-4 text-center">
-                        <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                            <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900 mb-4">
-                                Выбор дат бронирования
-                            </Dialog.Title>
+            <Dialog as="div" className="relative z-50" onClose={closeModal}>
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
+                <div className="fixed inset-0 overflow-y-auto flex items-center justify-center p-4">
+                    <Dialog.Panel className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl">
+                        <Dialog.Title className="text-xl font-bold mb-6 text-gray-800">Выберите даты</Dialog.Title>
 
-                            <div className="flex justify-center">
-                                <DayPicker
-                                    mode="range"
-                                    selected={{ from: checkInDate, to: checkOutDate }}
-                                    onSelect={(range) => setDates({ checkIn: range?.from, checkOut: range?.to })}
-                                    disabled={disabledDays} // Применяем наши правила блокировки!
-                                    numberOfMonths={1}
-                                />
-                            </div>
+                        <div className="flex justify-center border rounded-xl p-2 bg-gray-50">
+                            <DayPicker
+                                locale={ru}
+                                mode="range"
+                                selected={{ from: checkInDate, to: checkOutDate }}
+                                onSelect={handleSelect}
+                                disabled={[{ before: today }, ...bookedDates]}
+                                modifiers={{ booked: bookedDates }}
+                                modifiersClassNames={{ booked: 'my-booked-day' }}
+                                numberOfMonths={1}
+                                fromMonth={today}
+                                showOutsideDays={false}
+                            />
+                        </div>
 
-                            <div className="mt-6 flex justify-end gap-3">
-                                <button type="button" onClick={closeModal} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                    Отмена
-                                </button>
-                                <button type="button" onClick={createBooking} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-                                    Подтвердить
-                                </button>
-                            </div>
-                        </Dialog.Panel>
-                    </div>
+                        <div className="mt-6 flex gap-3">
+                            <button onClick={closeModal} className="flex-1 px-4 py-2.5 border rounded-xl font-medium hover:bg-gray-100 transition">
+                                Отмена
+                            </button>
+                            <button onClick={createBooking} className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-lg">
+                                Забронировать
+                            </button>
+                        </div>
+                    </Dialog.Panel>
                 </div>
             </Dialog>
         </Transition>

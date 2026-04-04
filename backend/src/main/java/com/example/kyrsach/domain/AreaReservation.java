@@ -12,6 +12,9 @@ public class AreaReservation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private int participants;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -25,4 +28,8 @@ public class AreaReservation {
 
     @Column(name = "end_time", nullable = false)
     private LocalDateTime endTime;
+
+    @Column(nullable = false)
+    @Builder.Default // Важно для Lombok, чтобы дефолтное значение работало при .builder()
+    private String status = "CONFIRMED";
 }

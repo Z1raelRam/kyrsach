@@ -1,21 +1,31 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useHostelStore } from '../store/hostelStore';
-import Navbar from '../components/Navbar';
 
 export default function Home() {
     const { hostels, loading, fetchHostels } = useHostelStore();
 
     useEffect(() => {
         fetchHostels();
-    },[fetchHostels]);
+    }, [fetchHostels]);
 
-    // Картинки-заглушки для красоты
-    const getMockImage = (id: number) => `https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=600&q=80&sig=${id}`;
+    // 100% рабочие и красивые картинки интерьеров/хостелов
+    const hostelImages =[
+        'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=600&q=80', // Лофт/Кровати
+        'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=600&q=80', // Светлая комната
+        'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=600&q=80', // Уютная спальня
+        'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=600&q=80', // Дизайнерский интерьер
+        'https://images.unsplash.com/photo-1555636222-cae831e670b3?auto=format&fit=crop&w=600&q=80', // Современный дизайн
+        'https://images.unsplash.com/photo-1623625434462-e5e42318ae49?auto=format&fit=crop&w=600&q=80', // Двухъярусные кровати
+    ];
+
+    const getHostelImage = (id: number) => {
+        return hostelImages[(id - 1) % hostelImages.length];
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 pb-12">
-            <Navbar />
+            {/* ВНИМАНИЕ: NAVBAR ОТСЮДА УБРАН, ЧТОБЫ НЕ БЫЛО ДУБЛЯ! */}
 
             {/* HERO БАННЕР */}
             <div className="bg-blue-600 text-white py-20 px-4 text-center shadow-inner">
@@ -31,37 +41,44 @@ export default function Home() {
                 {loading ? (
                     <p className="text-center text-gray-500 text-xl py-10">Загрузка каталога...</p>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {hostels.map((hostel) => (
-                            <Link
-                                to={`/hostels/${hostel.id}`}
-                                key={hostel.id}
-                                className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 group"
-                            >
-                                <div className="h-48 overflow-hidden relative">
-                                    <img
-                                        src={getMockImage(hostel.id)}
-                                        alt={hostel.name}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                    />
-                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                                        <h2 className="text-xl font-bold text-white">{hostel.name}</h2>
+                    hostels && hostels.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {hostels.map((hostel) => (
+                                <Link
+                                    to={`/hostels/${hostel.id}`}
+                                    key={hostel.id}
+                                    className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 group"
+                                >
+                                    <div className="h-48 overflow-hidden relative bg-gray-200">
+                                        <img
+                                            src={getHostelImage(hostel.id)}
+                                            alt={hostel.name}
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                        />
+                                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                                            <h2 className="text-xl font-bold text-white">{hostel.name}</h2>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="p-6">
-                                    <p className="text-gray-500 text-sm flex items-center gap-1">
-                                        📍 {hostel.address}
-                                    </p>
-                                    <p className="text-gray-700 mt-4 text-base line-clamp-3 leading-relaxed">
-                                        {hostel.description}
-                                    </p>
-                                    <div className="mt-6 text-blue-600 font-bold text-sm uppercase tracking-wide group-hover:text-blue-800">
-                                        Посмотреть номера &rarr;
+                                    <div className="p-6">
+                                        <p className="text-gray-500 text-sm flex items-center gap-1">
+                                            📍 {hostel.address}
+                                        </p>
+                                        <p className="text-gray-700 mt-4 text-base line-clamp-3 leading-relaxed">
+                                            {hostel.description}
+                                        </p>
+                                        <div className="mt-6 text-blue-600 font-bold text-sm uppercase tracking-wide group-hover:text-blue-800">
+                                            Посмотреть номера &rarr;
+                                        </div>
                                     </div>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center text-gray-600 text-xl py-10 bg-white rounded-lg shadow-md">
+                            <p className="mb-4">В базе данных пока нет добавленных хостелов.</p>
+                            <p className="text-base text-gray-500">Попросите администратора добавить хостелы или воспользуйтесь админ-панелью.</p>
+                        </div>
+                    )
                 )}
             </div>
         </div>
